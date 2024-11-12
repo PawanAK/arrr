@@ -6,25 +6,61 @@ import 'mind-ar/dist/mindar-image-aframe.prod.js';
 
 export default function ARGame() {
   const [score, setScore] = useState(0);
+  const [isTargetFound, setIsTargetFound] = useState(false);
   const sceneRef = useRef(null);
 
   useEffect(() => {
     const sceneEl = sceneRef.current;
     const arSystem = sceneEl?.systems["mindar-image-system"];
     
-    sceneEl?.addEventListener('renderstart', () => {
-      arSystem?.start();
-    });
+    // Target found/lost handlers
+    const targetFound = () => {
+      setIsTargetFound(true);
+      // Increment score when target is found
+      setScore(prev => prev + 1);
+    };
+
+    const targetLost = () => {
+      setIsTargetFound(false);
+    };
+
+    // Add target found/lost event listeners
+    sceneEl?.addEventListener('targetFound', targetFound);
+    sceneEl?.addEventListener('targetLost', targetLost);
+
+    const startAR = () => {
+      if (arSystem) {
+        arSystem.start();
+      }
+    };
+
+    sceneEl?.addEventListener('renderstart', startAR);
 
     return () => {
-      arSystem?.stop();
+      if (arSystem) {
+        arSystem.stop();
+      }
+      sceneEl?.removeEventListener('targetFound', targetFound);
+      sceneEl?.removeEventListener('targetLost', targetLost);
+      sceneEl?.removeEventListener('renderstart', startAR);
     };
   }, []);
 
   return (
     <>
-      <div style={{ position: 'fixed', top: 10, left: 10, zIndex: 1000, background: 'white', padding: '10px' }}>
-        Score: {score}
+      <div style={{ 
+        position: 'fixed', 
+        top: 20, 
+        left: 20, 
+        zIndex: 1000, 
+        background: '#FF4081', // Changed to pink
+        padding: '12px 20px',
+        borderRadius: '8px',
+        color: 'white',
+        fontWeight: 'bold',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+      }}>
+        Points: {score}
       </div>
       
       <a-scene
@@ -43,7 +79,6 @@ export default function ARGame() {
             position="0 0 0" 
             scale="1 1 1" 
             color="red"
-            onClick={() => setScore(prev => prev + 1)}
           ></a-box>
         </a-entity>
 
